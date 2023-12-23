@@ -9,8 +9,7 @@
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
 
-
-unsigned long int lidStartTime; 
+unsigned long int lastLidOpenedTime; 
 
 const int SERVO_MOTOR_SIGNAL_PIN = 4; //pwm pin  2,4, 12-19, 21-23 , 25-27 , 32,33
 const int LID_START_POSITION = 0;
@@ -25,6 +24,7 @@ const int MIN_DISTANCE_TO_OPEN_LID = 10;
 const char auth[] = BLYNK_AUTH_TOKEN;
 const char ssid[] = "nepathyecollege_fbtwl_2.4";
 const char pass[] = "nepathya123";
+bool isLidOpen;
 
 void rotateMotor(int,int);
 void openLid();
@@ -37,8 +37,6 @@ int getObjectDistance();
 
 BlynkTimer timer;
 Servo myservo;
-bool isLidOpen;
-
 
 void setup() {
   
@@ -77,11 +75,12 @@ void openLid(){
    if(isLidOpen == true )
     return;
 
-  if(lidStartTime + LID_OPENING_TIME_IN_MS > millis())
+  if(lastLidOpenedTime + LID_OPENING_TIME_IN_MS > millis())
     return;
 
-  Serial.println("Closing Lid !!");
+  Serial.println("Opening Lid !!");
   rotateMotor(LID_ENDING_POSITION,LID_START_POSITION);
+  lastLidOpenedTime = millis();
   isLidOpen = true;
 }
 
@@ -89,11 +88,9 @@ void closeLid(){
   if(isLidOpen == false)
     return;
 
-  Serial.println("Opening Lid !!");
+  Serial.println("Closing Lid !!");
   rotateMotor(LID_START_POSITION,LID_ENDING_POSITION);
-  lidStartTime = millis();
   isLidOpen = false;
- 
 }
 
 void rotateMotor(int startingPosition , int endingPosition){
