@@ -9,44 +9,44 @@
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
 
+
 unsigned long int lidStartTime; 
 
-//pwm pin  2,4, 12-19, 21-23 , 25-27 , 32,33
+const int SERVO_MOTOR_SIGNAL_PIN = 4; //pwm pin  2,4, 12-19, 21-23 , 25-27 , 32,33
+const int LID_START_POSITION = 0;
+const int LID_ENDING_POSITION = 180;
+const int LID_OPENING_TIME_IN_MS = 3000;
+const int GARBAGE_LEVEL_TRIGGER_PIN = 2;
+const int GARBAGE_LEVEL_ECHO_PIN = 5;
+const int OBJECT_DISTANCE_TRIGGER_PIN = 19;
+const int OBJECT_DISTANCE_ECHO_PIN = 21;
+const int MIN_DISTANCE_TO_OPEN_LID = 10;
 
-#define SERVO_MOTOR_SIGNAL_PIN 4
-#define LID_START_POSITION 0
-#define LID_ENDING_POSITION 180
-#define LID_OPENING_TIME_IN_MS 3000
-
-#define GARBAGE_LEVEL_TRIGGER_PIN 2
-#define GARBAGE_LEVEL_ECHO_PIN 5
-
-#define OBJECT_DISTANCE_TRIGGER_PIN 19
-#define OBJECT_DISTANCE_ECHO_PIN 21
-
-// #define int MIN_DISTANCE_TO_OPEN_LID 10;
-
-char auth[] = BLYNK_AUTH_TOKEN;
-char ssid[] = "Name";
-char pass[] = "amrit12345";
-
-BlynkTimer timer;
+const char auth[] = BLYNK_AUTH_TOKEN;
+const char ssid[] = "nepathyecollege_fbtwl_2.4";
+const char pass[] = "nepathya123";
 
 void rotateMotor(int,int);
 void openLid();
 void closeLid();
+void setData();
 bool personIsNear();
+int calculateSonarDistance(int, int);
+int getGarbageLevel();
+int getObjectDistance();
 
+BlynkTimer timer;
 Servo myservo;
 bool isLidOpen;
 
+
 void setup() {
+  
+  Serial.begin(9600);
+  myservo.attach(SERVO_MOTOR_SIGNAL_PIN);
 
-  Serial.begin(115200);
-  myservo.attach(SERVO_MOTOR_SIGNAL_PIN);  // attaches the servo on pin 5 to the servo object
   Blynk.begin(auth, ssid , pass);
-
-  Serial.println("Blynk initited");
+  Serial.println("Blynk Connection Successful !");
 
   pinMode(GARBAGE_LEVEL_TRIGGER_PIN, OUTPUT);
   pinMode(GARBAGE_LEVEL_ECHO_PIN, INPUT);
@@ -54,8 +54,7 @@ void setup() {
   pinMode(OBJECT_DISTANCE_TRIGGER_PIN , OUTPUT);
   pinMode(OBJECT_DISTANCE_ECHO_PIN ,INPUT);
 
-  delay(2000);
-  timer.setInterval(10L, SetData);
+  timer.setInterval(10L, setData);
 }
 
 void loop() {
@@ -66,7 +65,7 @@ void loop() {
   }else{
     Serial.println("Blynk Connection Broken !!");
   }
-  
+
   if(personIsNear()){
     openLid();
   }else{
@@ -105,6 +104,7 @@ void rotateMotor(int startingPosition , int endingPosition){
   }
   myservo.write(endingPosition);
 }
+
 int calculateSonarDistance(int triggerPin , int echoPin){
 
   digitalWrite(triggerPin, LOW);
@@ -130,7 +130,7 @@ int getObjectDistance(){
   return distance;
 }
 
-void SetData(){
+void setData(){
   Blynk.virtualWrite(V0, getGarbageLevel());
   Blynk.virtualWrite(V1, getObjectDistance());
 }
